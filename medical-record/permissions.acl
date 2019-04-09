@@ -1,0 +1,174 @@
+/*
+	Rules for practitioner
+*/
+rule PractitionerReadPublicProfile {
+  description: "Practitioner can read public profile of every practitioner"
+  participant: "org.example.emr.Practitioner"
+  operation: READ
+  resource: "org.example.emr.PractitionerPublicProfile"
+  action: ALLOW
+}
+
+rule PractitionerAccessOwnPublicProfile {
+  description: "Practitioner can access his public profile"
+  participant(p): "org.example.emr.Practitioner"
+  operation: ALL
+  resource(r): "org.example.emr.PractitionerPublicProfile"
+  condition: (p.getIdentifier() == r.owner.getIdentifier())
+  action: ALLOW
+}
+
+rule PractitionerAccessOwn {
+  description: "Practitioner can read public profile"
+  participant(p): "org.example.emr.Practitioner"
+  operation: ALL
+  resource(r): "org.example.emr.Practitioner"
+  condition: (p.getIdentifier() == r.getIdentifier())
+  action: ALLOW
+}
+
+rule PractitionerReadPatientIfAuthorized {
+  description: "Practitioner can read his patient profile if authorized"
+  participant(p): "org.example.emr.Practitioner"
+  operation: READ
+  resource(r): "org.example.emr.Patient"
+  condition: (r.authorized.indexOf(p.getIdentifier()) > -1)
+  action: ALLOW
+}
+
+rule PractitionerReadPatientProfileIfAuthorized {
+  description: "Practitioner can read his patient profile if authorized"
+  participant(p): "org.example.emr.Practitioner"
+  operation: READ
+  resource(r): "org.example.emr.PersonalDetails"
+  condition: (r.owner.authorized.indexOf(p.getIdentifier()) > -1)
+  action: ALLOW
+}
+
+rule PractitionerAccessMedicalRecord {
+  description: "Practitioner can read, update his patient's medical record if authorized"
+  participant(p): "org.example.emr.Practitioner"
+  operation: READ, UPDATE, CREATE
+  resource(r): "org.example.emr.MedicalRecord"
+  condition: (r.owner.authorized.indexOf(p.getIdentifier()) > -1)
+  action: ALLOW
+}
+
+rule PractitionerUpdateMedicalRecordViaTransaction {
+  description: "Practitioner can update his patient's medical record via transaction"
+  participant(p): "org.example.emr.Practitioner"
+  operation: ALL
+  resource(r): "org.example.emr.UpdateMedicalRecord"
+  condition: (r.patient.authorized.indexOf(p.getIdentifier()) > -1)
+  action: ALLOW
+}
+
+/*
+	rule for patient
+*/
+
+rule PatientAccessPractitionerPublicProfile {
+    description: "Patient can access practitioners public profile"
+    participant: "org.example.emr.Patient"
+    operation: READ
+    resource: "org.example.emr.PractitionerPublicProfile"
+    action: ALLOW
+}
+
+rule PatientAccessOwnPersonalDetails {
+    description: "Patient can access own personal details"
+    participant(p): "org.example.emr.Patient"
+    operation: ALL
+    resource(r): "org.example.emr.PersonalDetails"
+  	condition: (p.getIdentifier() == r.owner.getIdentifier())
+    action: ALLOW
+}
+
+rule PatientAccessOwnProfile {
+    description: "Patient can access own profile"
+    participant(p): "org.example.emr.Patient"
+    operation: ALL
+    resource(r): "org.example.emr.Patient"
+  	condition: (p.getIdentifier() == r.getIdentifier())
+    action: ALLOW
+}
+
+rule PatientReadOwnMedicalRecord {
+    description: "Patient can access own personal details"
+    participant(p): "org.example.emr.Patient"
+    operation: READ
+    resource(r): "org.example.emr.MedicalRecord"
+  	condition: (p.getIdentifier() == r.owner.getIdentifier())
+    action: ALLOW
+}
+
+rule PatientUpdatePermissionsOwnMedicalRecordViaGrantAccess {
+    description: "Patient update own medical record via GrantAccess transaction"
+    participant(p): "org.example.emr.Patient"
+    operation: UPDATE
+    resource(r): "org.example.emr.MedicalRecord"
+  	transaction: "org.example.emr.GrantAccess"
+  	condition: (p.getIdentifier() == r.owner.getIdentifier())
+    action: ALLOW
+}
+
+rule PatientGrantAccess {
+	description: "Patient can grant access"
+    participant(p): "org.example.emr.Patient"
+    operation: ALL
+    resource(r): "org.example.emr.GrantAccess"
+  	transaction(tx): "org.example.emr.GrantAccess"
+  	condition: (p.getIdentifier() == r.patient.getIdentifier())
+    action: ALLOW
+}
+
+rule PatientRevokeAccess {
+	description: "Patient can revoke access"
+    participant(p): "org.example.emr.Patient"
+    operation: ALL
+    resource(r): "org.example.emr.RevokeAccess"
+  	transaction(tx): "org.example.emr.RevokeAccess"
+  	condition: (p.getIdentifier() == r.patient.getIdentifier())
+    action: ALLOW
+}
+
+rule PatientUpdatePermissionsOwnMedicalRecordViaRevokeAccess {
+    description: "Patient update own medical record via RevokeAccess transaction"
+    participant(p): "org.example.emr.Patient"
+    operation: UPDATE
+    resource(r): "org.example.emr.MedicalRecord"
+  	transaction: "org.example.emr.RevokeAccess"
+  	condition: (p.getIdentifier() == r.owner.getIdentifier())
+    action: ALLOW
+}
+
+/*
+	base rules
+*/
+rule SystemACL {
+    description: "All access - grant everything to everybody"
+    participant: "org.hyperledger.composer.system.Participant"
+    operation: ALL
+    resource: "org.hyperledger.composer.system.**"
+    action: ALLOW
+}
+
+/*
+	special cases
+*/
+
+rule NetworkAdminUser {
+    description: "Grant business network administrators full access to user resources"
+    participant: "org.hyperledger.composer.system.NetworkAdmin"
+    operation: ALL
+    resource: "**"
+    action: ALLOW
+}
+
+rule NetworkAdminSystem {
+    description: "Grant business network administrators full access to system resources"
+    participant: "org.hyperledger.composer.system.NetworkAdmin"
+    operation: ALL
+    resource: "org.hyperledger.composer.system.**"
+    action: ALLOW
+}

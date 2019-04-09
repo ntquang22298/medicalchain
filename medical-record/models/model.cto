@@ -1,0 +1,90 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Write your model definitions here
+ */
+
+namespace org.example.emr
+
+concept Address {
+  o String street
+  o String house
+  o String city
+}
+
+concept Workplace {
+  o String name
+  o Address address
+}
+
+participant Patient identified by id {
+  o String id
+  o String[] authorized
+  --> PersonalDetails personalDetails
+  --> MedicalRecord medicalRecord
+}
+
+participant Practitioner identified by id {
+  o String id
+  o String[] patients
+  --> PractitionerPublicProfile publicProfile
+}
+
+asset MedicalRecord identified by id {
+  o String id
+  o String[] permissions
+  o String description
+  o Integer version
+  --> Patient owner
+}
+
+asset PersonalDetails identified by id {
+  o String id
+  o String lastname
+  o String firstname
+  o Integer Dob
+  o String email
+  o Address address
+  --> Patient owner
+}
+
+asset PractitionerPublicProfile identified by id {
+  o String id
+  o String firstname
+  o String lastname
+  o Integer Dob
+  o String email
+  o Workplace workplace
+  o String[] qualifications
+  --> Practitioner owner
+}
+
+transaction UpdateMedicalRecord {
+  o String content
+  --> Practitioner practitioner
+  --> Patient patient
+}
+
+// patient permiss a practitioner access to his profile and medical record
+transaction GrantAccess {
+  --> Practitioner practitioner
+  --> Patient patient
+}
+
+// patient revoke permission access of practitioner 
+transaction RevokeAccess {
+  --> Practitioner practitioner
+  --> Patient patient
+}
